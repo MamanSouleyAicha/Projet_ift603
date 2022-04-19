@@ -1,40 +1,52 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr  7 17:28:59 2022
-
-@author: toshiba
-"""
 
 
-from sklearn.neighbors import KNeighborsClassifier
+
+import numpy as np
+import pandas as pd
+from IPython.display import display
+
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import log_loss
+from sklearn.metrics import classification_report
 
-class KNNClassifier(object):
+
+class DTSClassifier(object):
+    
 
     def __init__(self, x_train, y_train, x_val, y_val, scorers):
+        # classe qui implemente l arbre de decision
         self.x_train = x_train
         self.y_train = y_train
         self.x_val = x_val
         self.y_val = y_val
-        
-        self.estimator = KNeighborsClassifier(n_neighbors=3, n_jobs=4)
+
+        self.estimator = DecisionTreeClassifier()
         self.scorers = scorers
         self.best_accuracy = 0
 
     def train_sans_grid(self):
-        # entraine le model sans le grid search
-        KNN = self.estimator
-        KNN.fit(self.x_train, self.y_train)
-        pred_val = KNN.predict(self.x_val)
-        accu_val = accuracy_score(self.y_val, pred_val)
-        print('Accuracy des donne de validation: {:.3%}'.format(accu_val))
-        
-    def train(self, grid_search_params={}, random_search=True):
-        # entraine le model en utilisant le grid search
+         
+        #entrainement sans hyper param
+        DTS = self.estimator
+        DTS.fit(self.x_train, self.y_train)
+       
 
-        # Grid search
+        pred_val = DTS.predict(self.x_val)
+        accu_val = accuracy_score(self.y_val, pred_val)
+        
+            
+        print('Accuracy validation: {:.3%}'.format(accu_val))
+
+        
+
+    def train(self, grid_search_params={}, random_search=True):
+        
+        #entrainement avec recherche d hyperparamettre
+        # Grid search 
         searching_params = {
             "scoring": self.scorers,
             "refit": "Accuracy",
@@ -50,39 +62,25 @@ class KNNClassifier(object):
             print("Using complet search:")
             search_g = GridSearchCV(self.estimator, grid_search_params).set_params(**searching_params)
 
-        # Model
+        # Model 
         search_g.fit(self.x_train, self.y_train)
-
         
         self.estimator = search_g.best_estimator_
         self.best_accuracy = search_g.best_score_
         self.hyper_search = search_g
 
-        # Predictions
         
+        faire une prediction sur les donnees de val
         pred_val = self.estimator.predict(self.x_val)
 
-        #  accuracy VALIDATION
         
         accu_val = accuracy_score(self.y_val, pred_val)
-        
-        print('Best cross val accuracy : {}'.format(self.hyper_search.best_score_))
-        print('Best estimator:\n{}'.format(self.hyper_search.best_estimator_))
-        print()
-        
-        print('Accuracy validation: {:.3%}'.format(accu_val))
 
         return accu_val, self.estimator, self.best_accuracy
 
-    def predict(self,x):
-        
-        return self.estimator.predict(x)
-        
-    
-    def erreur(self, t, prediction):
+    def predict(self, X):
         """
-        Retourne la diffÃ©rence au carrÃ© entre
-        la cible ``t`` et la prÃ©diction ``prediction``.
+        faire la prediction sur le model entraine
         """
-        return (t - prediction) ** 2
-
+        return self.estimator.predict(X)
+        

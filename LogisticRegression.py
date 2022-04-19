@@ -1,40 +1,54 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr  7 17:28:59 2022
+Ã‰diteur de Spyder
 
-@author: toshiba
+Maman Souley Aicha mama3101
+Mahamadou Sangare sanm0301
+
 """
 
 
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
+
 from sklearn.metrics import accuracy_score
 
-class KNNClassifier(object):
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.linear_model import LogisticRegression
 
+
+class LogisticRegressionClassifier(object):
+    
+    
+    
+    Class qui implemente la regression logistic de sklearn
     def __init__(self, x_train, y_train, x_val, y_val, scorers):
         self.x_train = x_train
         self.y_train = y_train
         self.x_val = x_val
         self.y_val = y_val
-        
-        self.estimator = KNeighborsClassifier(n_neighbors=3, n_jobs=4)
+        self.estimator = LogisticRegression(n_jobs=4)
         self.scorers = scorers
-        self.best_accuracy = 0
 
     def train_sans_grid(self):
-        # entraine le model sans le grid search
-        KNN = self.estimator
-        KNN.fit(self.x_train, self.y_train)
-        pred_val = KNN.predict(self.x_val)
+        LogisticRegression = self.estimator
+        LogisticRegression.fit(self.x_train, self.y_train)
+        
+        pred_val = LogisticRegression.predict(self.x_val)
         accu_val = accuracy_score(self.y_val, pred_val)
         print('Accuracy des donne de validation: {:.3%}'.format(accu_val))
-        
-    def train(self, grid_search_params={}, random_search=True):
-        # entraine le model en utilisant le grid search
 
-        # Grid search
+        
+
+    def train(self, grid_search_params={}, random_search=True):
+        """
+        enTraine le model en utilisant le grid_search
+        Inputs:
+        - grid_search_params (dict) -- 
+
+        
+        """
+        # Grid search init with kfold
         searching_params = {
             "scoring": self.scorers,
             "refit": "Accuracy",
@@ -50,39 +64,29 @@ class KNNClassifier(object):
             print("Using complet search:")
             search_g = GridSearchCV(self.estimator, grid_search_params).set_params(**searching_params)
 
-        # Model
+        # entrainement de Model
         search_g.fit(self.x_train, self.y_train)
 
-        
+        # garder les meilleurs param et les affiche en sortie
         self.estimator = search_g.best_estimator_
         self.best_accuracy = search_g.best_score_
         self.hyper_search = search_g
+        # Predictions de validation data
+        
+        pred_val = search_g.predict(self.x_val)
+        
+        
+        acc_val = accuracy_score(self.y_val, pred_val)
 
-        # Predictions
-        
-        pred_val = self.estimator.predict(self.x_val)
-
-        #  accuracy VALIDATION
-        
-        accu_val = accuracy_score(self.y_val, pred_val)
-        
         print('Best cross val accuracy : {}'.format(self.hyper_search.best_score_))
         print('Best estimator:\n{}'.format(self.hyper_search.best_estimator_))
         print()
-        
-        print('Accuracy validation: {:.3%}'.format(accu_val))
+            
+        print('Accuracy validation: {:.3%}'.format(acc_val))
 
-        return accu_val, self.estimator, self.best_accuracy
-
-    def predict(self,x):
-        
-        return self.estimator.predict(x)
-        
-    
-    def erreur(self, t, prediction):
+    def predict(self, X):
         """
-        Retourne la diffÃ©rence au carrÃ© entre
-        la cible ``t`` et la prÃ©diction ``prediction``.
+        utilise le model entraine pour predire la sortie des donnees de test
         """
-        return (t - prediction) ** 2
-
+        return self.estimator.predict(X)
+       
